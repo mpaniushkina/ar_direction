@@ -38,12 +38,13 @@ import com.google.ar.core.PointCloud;
 import com.google.ar.core.Pose;
 import com.google.ar.core.Session;
 import com.google.ar.core.Trackable;
-import com.google.ar.core.Trackable.TrackingState;
+import com.google.ar.core.TrackingState;
 import com.google.ar.core.examples.java.helloar.rendering.BackgroundRenderer;
 import com.google.ar.core.examples.java.helloar.rendering.ObjectRenderer;
 import com.google.ar.core.examples.java.helloar.rendering.ObjectRenderer.BlendMode;
 import com.google.ar.core.examples.java.helloar.rendering.PlaneRenderer;
 import com.google.ar.core.examples.java.helloar.rendering.PointCloudRenderer;
+import com.google.ar.core.exceptions.CameraNotAvailableException;
 import com.google.ar.core.exceptions.UnavailableApkTooOldException;
 import com.google.ar.core.exceptions.UnavailableArcoreNotInstalledException;
 import com.google.ar.core.exceptions.UnavailableSdkTooOldException;
@@ -71,6 +72,7 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
 
     private final BackgroundRenderer mBackgroundRenderer = new BackgroundRenderer();
     private final ObjectRenderer mVirtualObject = new ObjectRenderer();
+    private final ObjectRenderer mStaticObject = new ObjectRenderer();
     private final ObjectRenderer mVirtualObjectShadow = new ObjectRenderer();
     private final PlaneRenderer mPlaneRenderer = new PlaneRenderer();
     private final PointCloudRenderer mPointCloud = new PointCloudRenderer();
@@ -161,7 +163,11 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
             if (mSession != null) {
                 showLoadingMessage();
                 // Note that order matters - see the note in onPause(), the reverse applies here.
-                mSession.resume();
+                try {
+                    mSession.resume();
+                } catch (CameraNotAvailableException e) {
+                    e.printStackTrace();
+                }
             }
             mSurfaceView.onResume();
             mDisplayRotationHelper.onResume();
@@ -236,6 +242,10 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
                 "andy_shadow.obj", "andy_shadow.png");
             mVirtualObjectShadow.setBlendMode(BlendMode.Shadow);
             mVirtualObjectShadow.setMaterialProperties(1.0f, 0.0f, 0.0f, 1.0f);
+
+            mStaticObject.createOnGlThread(/*context=*/this, "arrow/arrow.obj", "arrow/arrow.png");
+            mStaticObject.setMaterialProperties(0.0f, 3.5f, 1.0f, 6.0f);
+
         } catch (IOException e) {
             Log.e(TAG, "Failed to read obj file");
         }
@@ -362,8 +372,10 @@ public class HelloArActivity extends AppCompatActivity implements GLSurfaceView.
             {
                 frame.getCamera().getDisplayOrientedPose()
                     .compose(mCameraRelativePose).toMatrix(mAnchorMatrix, 0);
-                mVirtualObject.updateModelMatrix(mAnchorMatrix, 0.5f);
-                mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
+//                mVirtualObject.updateModelMatrix(mAnchorMatrix, 0.5f);
+//                mVirtualObject.draw(viewmtx, projmtx, lightIntensity);
+                mStaticObject.updateModelMatrix(mAnchorMatrix, 0.5f);
+                mStaticObject.draw(viewmtx, projmtx, lightIntensity);
             }
 
         } catch (Throwable t) {
